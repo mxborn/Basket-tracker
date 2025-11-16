@@ -1,0 +1,5 @@
+{
+  "name": "BasketStat Pro",
+  "description": "A web application to manage and visualize basketball statistics. Upload match data from CSV files and explore detailed stats for teams, players, and individual matches.",
+  "requestFramePermissions": []
+}
