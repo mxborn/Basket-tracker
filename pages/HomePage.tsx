@@ -61,9 +61,9 @@ const HomePage: React.FC = () => {
             return null;
         }
 
-        // FIX: The original `reduce` call lacked an initial value, causing TypeScript to infer `unknown` type for its parameters, leading to compile errors.
-        // Using the first element as the initial accumulator for reduce is a safe and robust pattern when the array is guaranteed to be non-empty.
-        const top = playerPointsArray.reduce((max, p) => p.points > max.points ? p : max, playerPointsArray[0]);
+        // FIX: The parameters of the reduce function are explicitly typed to resolve a TypeScript inference issue where they were inferred as 'unknown'.
+        // This ensures that properties can be safely accessed. The redundant initial value was also removed.
+        const top = playerPointsArray.reduce((max: { name: string, number: string, points: number }, p: { name: string, number: string, points: number }) => p.points > max.points ? p : max);
         
         return { playerName: top.name, playerNumber: top.number, pts: top.points };
     }, [filteredStats, mainTeam, players]);

@@ -9,7 +9,7 @@ import type { MatchData, Team, Player, Match, PlayerStats } from '../types';
 type FormPlayerStat = {
     playerName: string;
     playerNumber: string;
-    minutes: string;
+    minutes: number;
     pts: number;
     rebs: number;
     ast: number;
@@ -24,7 +24,7 @@ type FormPlayerStat = {
 };
 
 const initialPlayerStat: FormPlayerStat = {
-    playerName: '', playerNumber: '', minutes: '00:00',
+    playerName: '', playerNumber: '', minutes: 0,
     pts: 0, rebs: 0, ast: 0, stl: 0, blk: 0,
     fg: 0, fga: 0, threePt: 0, threePtA: 0, ft: 0, fta: 0,
 };

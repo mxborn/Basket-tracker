@@ -87,9 +87,10 @@ export interface PlayerStats {
   blk: number;
   foul: number;
   fouled: number;
-  minutes: string;
+  minutes: number;
   vps: number;
   plusMinus: number;
+  blka?: number;
   effic: number;
 }
 

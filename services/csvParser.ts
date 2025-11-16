@@ -3,20 +3,36 @@ import type { MatchData, PlayerStats, Team, Player, Match } from '../types';
 const headerMapping: { [key: string]: keyof PlayerStats } = {
     'Player': 'playerName',
     'No.': 'playerNumber',
+    'N.': 'playerNumber',
+    'N,': 'playerNumber',
+    'Mins': 'minutes',
+    '-Mins': 'minutes',
     '2Pt': 'twoPt',
+    '-2P': 'twoPt',
     '2PtA': 'twoPtA',
+    '-2PA': 'twoPtA',
     '2Pt%': 'twoPtPct',
+    '-2P%': 'twoPtPct',
     '3Pt': 'threePt',
+    '-3P': 'threePt',
     '3PtA': 'threePtA',
+    '-3PA': 'threePtA',
     '3Pt%': 'threePtPct',
+    '-3P%': 'threePtPct',
     'FG': 'fg',
+    'FGM': 'fg',
     'FGA': 'fga',
     'FG%': 'fgPct',
+    'FG %': 'fgPct',
     'EFG%': 'efgPct',
     'FT': 'ft',
+    '-FT': 'ft',
     'FTA': 'fta',
+    '-FTA': 'fta',
     'FT %': 'ftPct',
+    '-FT%': 'ftPct',
     'Pts': 'pts',
+    '-Pt': 'pts',
     'Layup': 'layup',
     'LayupA': 'layupA',
     'Layup%': 'layupPct',
@@ -24,14 +40,24 @@ const headerMapping: { [key: string]: keyof PlayerStats } = {
     'Paint Att': 'paintAtt',
     'TO Pts': 'toPts',
     'OReb': 'oReb',
+    '-OR': 'oReb',
     'DReb': 'dReb',
+    '-DR': 'dReb',
     'Rebs': 'rebs',
     'Ast': 'ast',
+    '-AST': 'ast',
     'TO': 'to',
+    '-TO': 'to',
     'Stl': 'stl',
+    '-ST': 'stl',
     'Blk': 'blk',
+    '-BLK': 'blk',
+    'Blk Against': 'blka',
+    '-BLKA': 'blka',
     'Foul': 'foul',
+    '-PF': 'foul',
     'Fouled': 'fouled',
+    '-DF': 'fouled',
     'Minutes': 'minutes',
     'VPS': 'vps',
     '+/-': 'plusMinus',
@@ -49,7 +75,6 @@ export const parseCsv = (csvText: string): MatchData => {
     const lines = csvText.trim().split('\n');
     const headers = lines[0].trim().split(';').map(h => {
         const trimmedHeader = h.trim();
-        // Normalize different possible headers for player number to 'No.'
         if (trimmedHeader === 'N.' || trimmedHeader === 'N,') {
             return 'No.';
         }
@@ -67,7 +92,7 @@ export const parseCsv = (csvText: string): MatchData => {
         const teamName = rowData[0].replace('Totals', '').trim();
         const teamId = `team-${Date.now()}-${teams.length}`;
         teams.push({ id: teamId, name: teamName });
-        const ptsIndex = headers.indexOf('Pts');
+        const ptsIndex = headers.findIndex(h => headerMapping[h] === 'pts');
         if (ptsIndex !== -1) {
             teamScores[teamId] = parseNumber(rowData[ptsIndex]);
         }
@@ -97,7 +122,10 @@ export const parseCsv = (csvText: string): MatchData => {
         const values = line.trim().split(';');
         if (values.length < headers.length) return;
 
-        const playerNumber = values[headers.indexOf('No.')];
+        const playerNumberIndex = headers.indexOf('No.');
+        if (playerNumberIndex === -1) throw new Error("CSV Header must include 'No.' for player numbers.");
+        const playerNumber = values[playerNumberIndex];
+        
         if (parseInt(playerNumber, 10) > 900 && index > 0) {
             currentTeamIndex = 1;
         }
@@ -157,9 +185,10 @@ export const parseCsv = (csvText: string): MatchData => {
             blk: parseNumber(rawStat.blk),
             foul: parseNumber(rawStat.foul),
             fouled: parseNumber(rawStat.fouled),
-            minutes: rawStat.minutes,
+            minutes: parseNumber(rawStat.minutes),
             vps: parseNumber(rawStat.vps),
             plusMinus: parseNumber(rawStat.plusMinus),
+            blka: parseNumber(rawStat.blka),
             effic: parseNumber(rawStat.effic),
         };
         stats.push(playerStat);
