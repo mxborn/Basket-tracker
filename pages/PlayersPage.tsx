@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import Card from '../components/ui/Card';
 import Table from '../components/ui/Table';
@@ -42,8 +41,8 @@ const PlayersPage: React.FC = () => {
                     <p className="text-text-secondary">No players found. Upload a match file to get started.</p>
                 ) : (
                     <Table
-                        headers={['Name', 'Number', 'Team']}
-                        rows={filteredPlayers.map(player => [player.name, player.number, getTeamName(player.teamId)])}
+                        headers={['Player', 'Team']}
+                        rows={filteredPlayers.map(player => [`${player.number} - ${player.name}`, getTeamName(player.teamId)])}
                     />
                 )}
             </Card>

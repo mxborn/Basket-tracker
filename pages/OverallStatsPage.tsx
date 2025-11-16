@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import Card from '../components/ui/Card';
 import Table from '../components/ui/Table';
 import { useAppContext } from '../context/AppContext';
@@ -11,14 +11,21 @@ interface AggregatedStats {
 
 const OverallStatsPage: React.FC = () => {
     const { state } = useAppContext();
-    const { players, stats, teams } = state;
+    const { players, stats, teams, championships, matches } = state;
+    const [selectedChampionshipId, setSelectedChampionshipId] = useState<string>('all');
 
     const getTeamName = (teamId: string) => teams.find(t => t.id === teamId)?.name || 'N/A';
 
     const aggregatedStats = useMemo(() => {
         const playerTotals: { [playerId: string]: AggregatedStats } = {};
 
-        stats.forEach(stat => {
+        const filteredMatchIds = selectedChampionshipId === 'all'
+            ? new Set(matches.map(m => m.id))
+            : new Set(matches.filter(m => m.championshipId === selectedChampionshipId).map(m => m.id));
+        
+        const relevantStats = stats.filter(s => filteredMatchIds.has(s.matchId));
+
+        relevantStats.forEach(stat => {
             if (!playerTotals[stat.playerId]) {
                 playerTotals[stat.playerId] = { gamesPlayed: 0 };
             }
@@ -52,8 +59,7 @@ const OverallStatsPage: React.FC = () => {
             const efgPct = ((((totals.fg as number) + 0.5 * (totals.threePt as number)) / (totals.fga as number)) * 100 || 0).toFixed(1);
 
             return [
-                player.number,
-                player.name,
+                `${player.number} - ${player.name}`,
                 getTeamName(player.teamId),
                 totals.gamesPlayed,
                 ppg,
@@ -69,16 +75,32 @@ const OverallStatsPage: React.FC = () => {
             ];
         }).filter(row => row !== null) as (string|number)[][];
 
-    }, [players, stats, teams]);
+    }, [players, stats, teams, matches, selectedChampionshipId]);
 
-    const headers = ['#', 'Player', 'Team', 'GP', 'PPG', 'RPG', 'APG', 'SPG', 'BPG', 'FG%', '2P%', '3P%', 'FT%', 'eFG%'];
+    const headers = ['Player', 'Team', 'GP', 'PPG', 'RPG', 'APG', 'SPG', 'BPG', 'FG%', '2P%', '3P%', 'FT%', 'eFG%'];
 
     return (
         <div>
             <h1 className="text-4xl font-bold text-text-primary mb-8">Overall Player Stats</h1>
+
+            <div className="mb-6">
+                <label htmlFor="championship-filter" className="block text-sm font-medium text-text-secondary mb-2">Filter by Championship</label>
+                <select 
+                    id="championship-filter"
+                    value={selectedChampionshipId}
+                    onChange={(e) => setSelectedChampionshipId(e.target.value)}
+                    className="bg-secondary border border-gray-600 text-text-primary text-sm rounded-lg focus:ring-accent focus:border-accent block w-full md:w-1/3 p-2.5"
+                >
+                    <option value="all">All Championships</option>
+                    {championships.map(champ => (
+                        <option key={champ.id} value={champ.id}>{champ.name}</option>
+                    ))}
+                </select>
+            </div>
+
             <Card>
                 {aggregatedStats.length === 0 ? (
-                    <p className="text-text-secondary">No aggregated stats available. Upload match data to see player averages.</p>
+                    <p className="text-text-secondary">No aggregated stats available for this selection. Upload match data to see player averages.</p>
                 ) : (
                     <Table headers={headers} rows={aggregatedStats} />
                 )}

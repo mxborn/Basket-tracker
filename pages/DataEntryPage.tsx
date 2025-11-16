@@ -1,3 +1,4 @@
+
 import React, { useRef, useState } from 'react';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
@@ -5,8 +6,6 @@ import { useAppContext } from '../context/AppContext';
 import { parseCsv } from '../services/csvParser';
 import { UploadIcon } from '../components/icons';
 import type { MatchData, Team, Player, Match, PlayerStats } from '../types';
-
-// --- Manual Entry Form Component ---
 
 type FormPlayerStat = {
     playerName: string;
@@ -65,7 +64,7 @@ const PlayerStatInputRow: React.FC<{
     );
 };
 
-const ManualDataEntryForm: React.FC = () => {
+const ManualDataEntryForm: React.FC<{ championshipId: string; onChampionshipMissing: () => void; }> = ({ championshipId, onChampionshipMissing }) => {
     const { dispatch } = useAppContext();
     const [status, setStatus] = useState<{ type: 'success' | 'error' | 'idle'; message: string }>({ type: 'idle', message: '' });
 
@@ -95,6 +94,10 @@ const ManualDataEntryForm: React.FC = () => {
     };
 
     const handleSubmit = () => {
+        if (!championshipId) {
+            onChampionshipMissing();
+            return;
+        }
         if (!team1Name || !team2Name) {
             setStatus({ type: 'error', message: 'Please enter names for both teams.' });
             return;
@@ -139,17 +142,16 @@ const ManualDataEntryForm: React.FC = () => {
             const team1Score = processTeamStats(team1Stats, team1Id, 1);
             const team2Score = processTeamStats(team2Stats, team2Id, 2);
 
-            const match: Match = {
+            const match: Omit<Match, 'championshipId'> = {
                 id: matchId, date: new Date().toLocaleDateString(),
                 team1Id, team2Id, team1Name, team2Name, team1Score, team2Score,
             };
 
-            const payload: MatchData = { match, stats: allStats, teams, players: allPlayers };
+            const matchData: MatchData = { match, stats: allStats, teams, players: allPlayers };
             
-            dispatch({ type: 'ADD_MATCH_DATA', payload });
+            dispatch({ type: 'ADD_MATCH_DATA', payload: { matchData, championshipId } });
             setStatus({ type: 'success', message: `Successfully added match: ${team1Name} vs ${team2Name}` });
             
-            // Reset form
             setTeam1Name(''); setTeam2Name('');
             setTeam1Stats([{...initialPlayerStat}]); setTeam2Stats([{...initialPlayerStat}]);
 
@@ -162,7 +164,6 @@ const ManualDataEntryForm: React.FC = () => {
         const teamName = teamNum === 1 ? team1Name : team2Name;
         const setTeamName = teamNum === 1 ? setTeam1Name : setTeam2Name;
         const stats = teamNum === 1 ? team1Stats : team2Stats;
-
         const headers = ['Name', '#', 'MIN', 'PTS', 'REB', 'AST', 'STL', 'BLK', 'FG', 'FGA', '3P', '3PA', 'FT', 'FTA', ''];
 
         return (
@@ -211,15 +212,16 @@ const ManualDataEntryForm: React.FC = () => {
     );
 };
 
-
-// --- CSV Uploader Component ---
-
-const CsvUploader: React.FC = () => {
+const CsvUploader: React.FC<{ championshipId: string; onChampionshipMissing: () => void; }> = ({ championshipId, onChampionshipMissing }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { dispatch } = useAppContext();
     const [status, setStatus] = useState<{ type: 'success' | 'error' | 'idle'; message: string }>({ type: 'idle', message: '' });
 
     const handleFileUpload = () => {
+        if (!championshipId) {
+            onChampionshipMissing();
+            return;
+        }
         fileInputRef.current?.click();
     };
 
@@ -235,7 +237,7 @@ const CsvUploader: React.FC = () => {
             if (typeof text === 'string') {
                 try {
                     const matchData = parseCsv(text);
-                    dispatch({ type: 'ADD_MATCH_DATA', payload: matchData });
+                    dispatch({ type: 'ADD_MATCH_DATA', payload: { matchData, championshipId } });
                     setStatus({ type: 'success', message: `Successfully loaded match: ${matchData.match.team1Name} vs ${matchData.match.team2Name}` });
                 } catch (error) {
                     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
@@ -275,17 +277,44 @@ const CsvUploader: React.FC = () => {
     );
 };
 
-
-// --- Main Page Component ---
-
 const DataEntryPage: React.FC = () => {
+    const { state } = useAppContext();
+    const { championships } = state;
     const [entryMode, setEntryMode] = useState<'csv' | 'manual'>('csv');
+    const [selectedChampionshipId, setSelectedChampionshipId] = useState<string>('');
+    const [championshipError, setChampionshipError] = useState<string>('');
+
+    const handleChampionshipMissing = () => {
+        setChampionshipError('Please select a championship first.');
+        setTimeout(() => setChampionshipError(''), 3000);
+    };
 
     return (
         <div>
             <h1 className="text-4xl font-bold text-text-primary mb-8">Data Entry</h1>
             
+            <Card className="mb-6">
+                <label htmlFor="championship-selector" className="block text-lg font-medium text-text-secondary mb-2">1. Select Championship</label>
+                <select 
+                    id="championship-selector"
+                    value={selectedChampionshipId}
+                    onChange={(e) => {
+                        setSelectedChampionshipId(e.target.value);
+                        setChampionshipError('');
+                    }}
+                    className="bg-secondary border border-gray-600 text-text-primary text-sm rounded-lg focus:ring-accent focus:border-accent block w-full md:w-1/2 p-2.5"
+                    disabled={championships.length === 0}
+                >
+                    <option value="">{championships.length > 0 ? 'Select a championship...' : 'No championships available. Create one first.'}</option>
+                    {championships.map(champ => (
+                        <option key={champ.id} value={champ.id}>{champ.name}</option>
+                    ))}
+                </select>
+                {championshipError && <p className="text-red-400 mt-2 text-sm">{championshipError}</p>}
+            </Card>
+
             <div className="flex space-x-2 md:space-x-4 mb-6 border-b border-gray-700">
+                <h2 className="text-lg font-medium text-text-secondary mr-4">2. Choose Entry Method</h2>
                 <button 
                     onClick={() => setEntryMode('csv')} 
                     className={`px-4 py-2 text-sm md:text-base font-semibold transition-colors ${entryMode === 'csv' ? 'border-b-2 border-accent text-accent' : 'text-text-secondary'}`}>
@@ -298,7 +327,10 @@ const DataEntryPage: React.FC = () => {
                 </button>
             </div>
             
-            {entryMode === 'csv' ? <CsvUploader /> : <ManualDataEntryForm />}
+            {entryMode === 'csv' ? 
+                <CsvUploader championshipId={selectedChampionshipId} onChampionshipMissing={handleChampionshipMissing} /> : 
+                <ManualDataEntryForm championshipId={selectedChampionshipId} onChampionshipMissing={handleChampionshipMissing} />
+            }
         </div>
     );
 };

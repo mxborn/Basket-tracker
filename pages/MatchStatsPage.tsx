@@ -1,16 +1,14 @@
-
 import React, { useState } from 'react';
 import Card from '../components/ui/Card';
 import Table from '../components/ui/Table';
 import { useAppContext } from '../context/AppContext';
 import type { PlayerStats } from '../types';
 
-const statHeaders = ['#', 'Player', 'MIN', 'PTS', 'REB', 'AST', 'STL', 'BLK', 'FG', 'FGA', 'FG%', '3P', '3PA', '3P%', 'FT', 'FTA', 'FT%', '+/-'];
+const statHeaders = ['Player', 'MIN', 'PTS', 'REB', 'AST', 'STL', 'BLK', 'FG', 'FGA', 'FG%', '3P', '3PA', '3P%', 'FT', 'FTA', 'FT%', '+/-'];
 
 const formatStatsToRows = (stats: PlayerStats[]): (string | number)[][] => {
   return stats.map(s => [
-    s.playerNumber,
-    s.playerName,
+    `${s.playerNumber} - ${s.playerName}`,
     s.minutes,
     s.pts,
     s.rebs,
@@ -32,7 +30,7 @@ const formatStatsToRows = (stats: PlayerStats[]): (string | number)[][] => {
 
 const MatchStatsPage: React.FC = () => {
     const { state } = useAppContext();
-    const { matches, stats, teams } = state;
+    const { matches, stats, teams, championships } = state;
     const [selectedMatchId, setSelectedMatchId] = useState<string>(matches.length > 0 ? matches[0].id : '');
 
     const selectedMatch = matches.find(m => m.id === selectedMatchId);
@@ -40,6 +38,8 @@ const MatchStatsPage: React.FC = () => {
     const team2Stats = selectedMatch ? stats.filter(s => s.matchId === selectedMatch.id && s.teamId === selectedMatch.team2Id) : [];
 
     const getTeamName = (teamId: string) => teams.find(t => t.id === teamId)?.name || 'Team';
+    const getChampionshipName = (championshipId: string) => championships.find(c => c.id === championshipId)?.name || 'N/A';
+
 
     return (
         <div>
@@ -55,11 +55,11 @@ const MatchStatsPage: React.FC = () => {
                             id="match-selector"
                             value={selectedMatchId}
                             onChange={(e) => setSelectedMatchId(e.target.value)}
-                            className="bg-secondary border border-gray-600 text-text-primary text-sm rounded-lg focus:ring-accent focus:border-accent block w-full md:w-1/2 p-2.5"
+                            className="bg-secondary border border-gray-600 text-text-primary text-sm rounded-lg focus:ring-accent focus:border-accent block w-full md:w-2/3 p-2.5"
                         >
                             {matches.map(match => (
                                 <option key={match.id} value={match.id}>
-                                    {match.date} - {match.team1Name} vs {match.team2Name}
+                                    {`${match.date} | ${getChampionshipName(match.championshipId)} | ${match.team1Name} vs ${match.team2Name}`}
                                 </option>
                             ))}
                         </select>

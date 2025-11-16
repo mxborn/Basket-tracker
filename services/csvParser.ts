@@ -1,4 +1,3 @@
-
 import type { MatchData, PlayerStats, Team, Player, Match } from '../types';
 
 const headerMapping: { [key: string]: keyof PlayerStats } = {
@@ -48,7 +47,14 @@ const parseNumber = (val: string): number => {
 
 export const parseCsv = (csvText: string): MatchData => {
     const lines = csvText.trim().split('\n');
-    const headers = lines[0].trim().split(';').map(h => h.trim());
+    const headers = lines[0].trim().split(';').map(h => {
+        const trimmedHeader = h.trim();
+        // Normalize different possible headers for player number to 'No.'
+        if (trimmedHeader === 'N.' || trimmedHeader === 'N,') {
+            return 'No.';
+        }
+        return trimmedHeader;
+    });
     
     const teamStatsRows = lines.slice(1).filter(line => line.includes('Totals'));
     const playerRows = lines.slice(1).filter(line => !line.includes('Totals'));
@@ -72,7 +78,7 @@ export const parseCsv = (csvText: string): MatchData => {
     }
 
     const matchId = `match-${Date.now()}`;
-    const match: Match = {
+    const match: Omit<Match, 'championshipId'> = {
         id: matchId,
         date: new Date().toLocaleDateString(),
         team1Id: teams[0].id,
@@ -91,9 +97,6 @@ export const parseCsv = (csvText: string): MatchData => {
         const values = line.trim().split(';');
         if (values.length < headers.length) return;
 
-        // A simple heuristic to switch teams: if a player has a very high number (like 998),
-        // it's likely a team separator row in this specific CSV format. A more robust solution
-        // would require a clearer format. For now, we'll assume the first team's players are listed first.
         const playerNumber = values[headers.indexOf('No.')];
         if (parseInt(playerNumber, 10) > 900 && index > 0) {
             currentTeamIndex = 1;

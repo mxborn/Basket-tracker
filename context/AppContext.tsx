@@ -1,19 +1,27 @@
+
 import React, { createContext, useContext, useReducer, ReactNode } from 'react';
-import type { Team, Player, Match, PlayerStats, MatchData } from '../types';
+import type { Team, Player, Match, PlayerStats, MatchData, Championship, ChampionshipTeam } from '../types';
 
 interface AppState {
   teams: Team[];
   players: Player[];
   matches: Match[];
   stats: PlayerStats[];
+  championships: Championship[];
+  championshipTeams: ChampionshipTeam[];
 }
 
 type Action =
-  | { type: 'ADD_MATCH_DATA'; payload: MatchData }
+  | { type: 'ADD_MATCH_DATA'; payload: { matchData: MatchData; championshipId: string } }
   | { type: 'ADD_TEAM'; payload: Omit<Team, 'id' | 'isMain'> }
   | { type: 'UPDATE_TEAM'; payload: Team }
   | { type: 'DELETE_TEAM'; payload: string }
-  | { type: 'SET_MAIN_TEAM'; payload: string };
+  | { type: 'SET_MAIN_TEAM'; payload: string }
+  | { type: 'ADD_CHAMPIONSHIP'; payload: { name: string } }
+  | { type: 'UPDATE_CHAMPIONSHIP'; payload: Championship }
+  | { type: 'DELETE_CHAMPIONSHIP'; payload: string }
+  | { type: 'ADD_TEAM_TO_CHAMPIONSHIP'; payload: ChampionshipTeam }
+  | { type: 'REMOVE_TEAM_FROM_CHAMPIONSHIP'; payload: ChampionshipTeam };
 
 interface AppContextType {
   state: AppState;
@@ -27,20 +35,21 @@ const initialState: AppState = {
   players: [],
   matches: [],
   stats: [],
+  championships: [],
+  championshipTeams: [],
 };
 
 const appReducer = (state: AppState, action: Action): AppState => {
   switch (action.type) {
     case 'ADD_MATCH_DATA': {
-      const { match: rawMatch, stats: rawStats, teams: newTeamsFromPayload, players: newPlayersFromPayload } = action.payload;
+      const { matchData, championshipId } = action.payload;
+      const { match: rawMatch, stats: rawStats, teams: newTeamsFromPayload, players: newPlayersFromPayload } = matchData;
 
-      // --- State updates will be based on these new arrays ---
       const updatedTeams = [...state.teams];
       const updatedPlayers = [...state.players];
       const finalStats: PlayerStats[] = [];
 
-      // --- 1. Reconcile Teams ---
-      const teamIdMap = new Map<string, string>(); // Maps raw team ID from payload to final team ID
+      const teamIdMap = new Map<string, string>();
       const wasAnyTeamMain = state.teams.some(t => t.isMain);
 
       newTeamsFromPayload.forEach(newTeam => {
@@ -48,7 +57,6 @@ const appReducer = (state: AppState, action: Action): AppState => {
         if (existingTeam) {
             teamIdMap.set(newTeam.id, existingTeam.id);
         } else {
-            // Team doesn't exist, create it
             const isFirstTeamEver = state.teams.length === 0 && updatedTeams.length === 0;
             const finalNewTeam: Team = { 
                 ...newTeam,
@@ -59,17 +67,16 @@ const appReducer = (state: AppState, action: Action): AppState => {
         }
       });
 
-      // --- 2. Reconcile Players and Finalize Stats ---
       const rawPlayerMap = new Map<string, Player>(newPlayersFromPayload.map(p => [p.id, p]));
       const existingPlayerLookup = new Map<string, Player>();
       updatedPlayers.forEach(p => existingPlayerLookup.set(`${p.teamId}-${p.number}`, p));
 
       rawStats.forEach(rawStat => {
         const rawPlayer = rawPlayerMap.get(rawStat.playerId);
-        if (!rawPlayer) return; // Should not happen if data is consistent
+        if (!rawPlayer) return;
 
         const finalTeamId = teamIdMap.get(rawStat.teamId);
-        if (!finalTeamId) return; // Should not happen
+        if (!finalTeamId) return;
 
         const lookupKey = `${finalTeamId}-${rawPlayer.number}`;
         let existingPlayer = existingPlayerLookup.get(lookupKey);
@@ -77,7 +84,6 @@ const appReducer = (state: AppState, action: Action): AppState => {
 
         if (existingPlayer) {
             finalPlayerId = existingPlayer.id;
-            // Optional: update player name if it has changed
             if (existingPlayer.name !== rawPlayer.name) {
                 const playerIndex = updatedPlayers.findIndex(p => p.id === existingPlayer!.id);
                 if (playerIndex !== -1) {
@@ -85,7 +91,6 @@ const appReducer = (state: AppState, action: Action): AppState => {
                 }
             }
         } else {
-            // Player does not exist, create a new one
             const newPlayer: Player = {
                 id: `player-${Date.now()}-${updatedPlayers.length}`,
                 name: rawPlayer.name,
@@ -93,7 +98,7 @@ const appReducer = (state: AppState, action: Action): AppState => {
                 teamId: finalTeamId,
             };
             updatedPlayers.push(newPlayer);
-            existingPlayerLookup.set(lookupKey, newPlayer); // Add to lookup for this run
+            existingPlayerLookup.set(lookupKey, newPlayer);
             finalPlayerId = newPlayer.id;
         }
 
@@ -105,9 +110,9 @@ const appReducer = (state: AppState, action: Action): AppState => {
         });
       });
 
-      // --- 3. Finalize Match ---
       const finalMatch: Match = {
           ...rawMatch,
+          championshipId,
           team1Id: teamIdMap.get(rawMatch.team1Id)!,
           team2Id: teamIdMap.get(rawMatch.team2Id)!,
           team1Name: updatedTeams.find(t => t.id === teamIdMap.get(rawMatch.team1Id))!.name,
@@ -142,8 +147,9 @@ const appReducer = (state: AppState, action: Action): AppState => {
       };
     }
     case 'DELETE_TEAM': {
-      const teamToDelete = state.teams.find(t => t.id === action.payload);
-      const remainingTeams = state.teams.filter(team => team.id !== action.payload);
+      const teamId = action.payload;
+      const teamToDelete = state.teams.find(t => t.id === teamId);
+      const remainingTeams = state.teams.filter(team => team.id !== teamId);
       
       if (teamToDelete?.isMain && remainingTeams.length > 0) {
         remainingTeams[0].isMain = true;
@@ -152,6 +158,7 @@ const appReducer = (state: AppState, action: Action): AppState => {
       return {
         ...state,
         teams: remainingTeams,
+        championshipTeams: state.championshipTeams.filter(ct => ct.teamId !== teamId),
       };
     }
     case 'SET_MAIN_TEAM': {
@@ -162,6 +169,49 @@ const appReducer = (state: AppState, action: Action): AppState => {
           isMain: team.id === action.payload,
         })),
       };
+    }
+    case 'ADD_CHAMPIONSHIP': {
+        const newChampionship: Championship = {
+            id: `champ-${Date.now()}`,
+            name: action.payload.name,
+        };
+        return {
+            ...state,
+            championships: [...state.championships, newChampionship],
+        };
+    }
+    case 'UPDATE_CHAMPIONSHIP': {
+        return {
+            ...state,
+            championships: state.championships.map(c => c.id === action.payload.id ? action.payload : c),
+        };
+    }
+    case 'DELETE_CHAMPIONSHIP': {
+        const championshipId = action.payload;
+        const matchesInChampionship = state.matches.filter(m => m.championshipId === championshipId).map(m => m.id);
+
+        return {
+            ...state,
+            championships: state.championships.filter(c => c.id !== championshipId),
+            championshipTeams: state.championshipTeams.filter(ct => ct.championshipId !== championshipId),
+            matches: state.matches.filter(m => m.championshipId !== championshipId),
+            stats: state.stats.filter(s => !matchesInChampionship.includes(s.matchId)),
+        };
+    }
+    case 'ADD_TEAM_TO_CHAMPIONSHIP': {
+        if (state.championshipTeams.some(ct => ct.championshipId === action.payload.championshipId && ct.teamId === action.payload.teamId)) {
+            return state; // Already exists
+        }
+        return {
+            ...state,
+            championshipTeams: [...state.championshipTeams, action.payload],
+        };
+    }
+    case 'REMOVE_TEAM_FROM_CHAMPIONSHIP': {
+        return {
+            ...state,
+            championshipTeams: state.championshipTeams.filter(ct => !(ct.championshipId === action.payload.championshipId && ct.teamId === action.payload.teamId)),
+        };
     }
     default:
       return state;

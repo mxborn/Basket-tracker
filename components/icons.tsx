@@ -49,3 +49,12 @@ export const StatsIcon = () => (
         <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-3.94-3.94m3.94 3.94l-3.94 3.94" />
     </svg>
 );
+
+export const ChampionshipIcon = () => (
+    <svg {...iconProps} viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12.75 21v-6.75a.75.75 0 00-1.5 0v6.75h-2.25a.75.75 0 00-.75.75v.008c0 .414.336.75.75.75h6.75a.75.75 0 00.75-.75v-.008a.75.75 0 00-.75-.75h-2.25z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 6.75h-9a9.75 9.75 0 000 11.25h9a9.75 9.75 0 000-11.25z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M18.75 6.75a.75.75 0 00-1.5 0v2.25a.75.75 0 001.5 0V6.75z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 6.75a.75.75 0 011.5 0v2.25a.75.75 0 01-1.5 0V6.75z" />
+    </svg>
+);

@@ -1,5 +1,15 @@
 
-export type Page = 'Home' | 'Teams' | 'Players' | 'Data Entry' | 'Matches' | 'Match Stats' | 'Overall Stats';
+export type Page = 'Home' | 'Teams' | 'Players' | 'Data Entry' | 'Matches' | 'Match Stats' | 'Overall Stats' | 'Championships';
+
+export interface Championship {
+  id: string;
+  name: string;
+}
+
+export interface ChampionshipTeam {
+  championshipId: string;
+  teamId: string;
+}
 
 export interface Team {
   id: string;
@@ -18,6 +28,7 @@ export interface Player {
 export interface Match {
   id: string;
   date: string;
+  championshipId: string;
   team1Id: string;
   team2Id: string;
   team1Name: string;
@@ -69,7 +80,7 @@ export interface PlayerStats {
 }
 
 export interface MatchData {
-  match: Match;
+  match: Omit<Match, 'championshipId'>;
   stats: PlayerStats[];
   teams: Team[];
   players: Player[];
