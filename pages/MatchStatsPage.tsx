@@ -1,36 +1,51 @@
+
 import React, { useState } from 'react';
 import Card from '../components/ui/Card';
 import Table from '../components/ui/Table';
 import { useAppContext } from '../context/AppContext';
-import type { PlayerStats } from '../types';
+import type { Player, PlayerStats } from '../types';
 
 const statHeaders = ['Player', 'MIN', 'PTS', 'REB', 'AST', 'STL', 'BLK', 'FG', 'FGA', 'FG%', '3P', '3PA', '3P%', 'FT', 'FTA', 'FT%', '+/-'];
 
-const formatStatsToRows = (stats: PlayerStats[]): (string | number)[][] => {
-  return stats.map(s => [
-    `${s.playerNumber} - ${s.playerName}`,
-    s.minutes,
-    s.pts,
-    s.rebs,
-    s.ast,
-    s.stl,
-    s.blk,
-    s.fg,
-    s.fga,
-    s.fgPct.toFixed(1),
-    s.threePt,
-    s.threePtA,
-    s.threePtPct.toFixed(1),
-    s.ft,
-    s.fta,
-    s.ftPct.toFixed(1),
-    s.plusMinus,
-  ]);
+const formatStatsToRows = (stats: PlayerStats[], players: Player[]): React.ReactNode[][] => {
+  return stats.map(s => {
+    const player = players.find(p => p.id === s.playerId);
+    const playerCell = (
+        <div className="flex items-center gap-3">
+            <img 
+                src={player?.pictureUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(s.playerName)}&background=4A5568&color=fff`} 
+                alt={s.playerName}
+                className="w-10 h-10 rounded-full object-cover bg-gray-500"
+            />
+            <span>{`${s.playerNumber} - ${s.playerName}`}</span>
+        </div>
+    );
+    
+    return [
+        playerCell,
+        s.minutes,
+        s.pts,
+        s.rebs,
+        s.ast,
+        s.stl,
+        s.blk,
+        s.fg,
+        s.fga,
+        s.fgPct.toFixed(1),
+        s.threePt,
+        s.threePtA,
+        s.threePtPct.toFixed(1),
+        s.ft,
+        s.fta,
+        s.ftPct.toFixed(1),
+        s.plusMinus,
+    ];
+  });
 };
 
 const MatchStatsPage: React.FC = () => {
     const { state } = useAppContext();
-    const { matches, stats, teams, championships } = state;
+    const { matches, stats, teams, championships, players } = state;
     const [selectedMatchId, setSelectedMatchId] = useState<string>(matches.length > 0 ? matches[0].id : '');
 
     const selectedMatch = matches.find(m => m.id === selectedMatchId);
@@ -69,11 +84,11 @@ const MatchStatsPage: React.FC = () => {
                         <div className="space-y-8">
                             <div>
                                 <h2 className="text-2xl font-semibold text-accent mb-4">{getTeamName(selectedMatch.team1Id)}</h2>
-                                <Table headers={statHeaders} rows={formatStatsToRows(team1Stats)} />
+                                <Table headers={statHeaders} rows={formatStatsToRows(team1Stats, players)} />
                             </div>
                             <div>
                                 <h2 className="text-2xl font-semibold text-accent mb-4">{getTeamName(selectedMatch.team2Id)}</h2>
-                                <Table headers={statHeaders} rows={formatStatsToRows(team2Stats)} />
+                                <Table headers={statHeaders} rows={formatStatsToRows(team2Stats, players)} />
                             </div>
                         </div>
                     )}

@@ -15,6 +15,17 @@ const TeamsPage: React.FC = () => {
     const [teamName, setTeamName] = useState('');
     const [logoUrl, setLogoUrl] = useState('');
 
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setLogoUrl(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
     const handleOpenModalForAdd = () => {
         setEditingTeam(null);
         setTeamName('');
@@ -100,8 +111,15 @@ const TeamsPage: React.FC = () => {
                             <input type="text" id="teamName" value={teamName} onChange={(e) => setTeamName(e.target.value)} className="bg-primary border border-gray-600 rounded px-3 py-2 w-full focus:ring-accent focus:border-accent" required />
                         </div>
                         <div>
-                            <label htmlFor="logoUrl" className="block text-sm font-medium text-text-secondary mb-1">Logo URL</label>
-                            <input type="text" id="logoUrl" value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} className="bg-primary border border-gray-600 rounded px-3 py-2 w-full focus:ring-accent focus:border-accent" placeholder="https://example.com/logo.png" />
+                            <label htmlFor="logoFile" className="block text-sm font-medium text-text-secondary mb-1">Team Logo</label>
+                            <div className="flex items-center gap-4 mt-2">
+                                <img 
+                                    src={logoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(teamName || 'T')}&background=4A5568&color=fff`} 
+                                    alt="Logo preview"
+                                    className="w-16 h-16 rounded-full object-cover bg-gray-500"
+                                />
+                                <input type="file" id="logoFile" accept="image/*" onChange={handleFileChange} className="block w-full text-sm text-text-secondary file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-accent file:text-white hover:file:bg-orange-600"/>
+                            </div>
                         </div>
                     </div>
                     <div className="mt-6 flex justify-end gap-3">

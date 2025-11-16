@@ -1,3 +1,4 @@
+
 import React, { useMemo, useState } from 'react';
 import Card from '../components/ui/Card';
 import Table from '../components/ui/Table';
@@ -46,6 +47,17 @@ const OverallStatsPage: React.FC = () => {
             const totals = playerTotals[player.id];
             if (!totals || totals.gamesPlayed === 0) return null;
 
+            const playerCell = (
+                <div className="flex items-center gap-3">
+                    <img 
+                        src={player.pictureUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(player.name)}&background=4A5568&color=fff`} 
+                        alt={player.name}
+                        className="w-10 h-10 rounded-full object-cover bg-gray-500"
+                    />
+                    <span>{`${player.number} - ${player.name}`}</span>
+                </div>
+            );
+
             const ppg = ((totals.pts as number) / totals.gamesPlayed).toFixed(1);
             const rpg = ((totals.rebs as number) / totals.gamesPlayed).toFixed(1);
             const apg = ((totals.ast as number) / totals.gamesPlayed).toFixed(1);
@@ -59,7 +71,7 @@ const OverallStatsPage: React.FC = () => {
             const efgPct = ((((totals.fg as number) + 0.5 * (totals.threePt as number)) / (totals.fga as number)) * 100 || 0).toFixed(1);
 
             return [
-                `${player.number} - ${player.name}`,
+                playerCell,
                 getTeamName(player.teamId),
                 totals.gamesPlayed,
                 ppg,
@@ -73,7 +85,7 @@ const OverallStatsPage: React.FC = () => {
                 `${ftPct}%`,
                 `${efgPct}%`,
             ];
-        }).filter(row => row !== null) as (string|number)[][];
+        }).filter(row => row !== null) as React.ReactNode[][];
 
     }, [players, stats, teams, matches, selectedChampionshipId]);
 

@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useReducer, ReactNode } from 'react';
 import type { Team, Player, Match, PlayerStats, MatchData, Championship, ChampionshipTeam } from '../types';
 
@@ -17,6 +16,8 @@ type Action =
   | { type: 'UPDATE_TEAM'; payload: Team }
   | { type: 'DELETE_TEAM'; payload: string }
   | { type: 'SET_MAIN_TEAM'; payload: string }
+  | { type: 'UPDATE_PLAYER', payload: Player }
+  | { type: 'UPDATE_MATCH', payload: Match }
   | { type: 'ADD_CHAMPIONSHIP'; payload: { name: string } }
   | { type: 'UPDATE_CHAMPIONSHIP'; payload: Championship }
   | { type: 'DELETE_CHAMPIONSHIP'; payload: string }
@@ -169,6 +170,18 @@ const appReducer = (state: AppState, action: Action): AppState => {
           isMain: team.id === action.payload,
         })),
       };
+    }
+    case 'UPDATE_PLAYER': {
+        return {
+            ...state,
+            players: state.players.map(p => p.id === action.payload.id ? action.payload : p),
+        };
+    }
+    case 'UPDATE_MATCH': {
+        return {
+            ...state,
+            matches: state.matches.map(m => m.id === action.payload.id ? action.payload : m),
+        };
     }
     case 'ADD_CHAMPIONSHIP': {
         const newChampionship: Championship = {

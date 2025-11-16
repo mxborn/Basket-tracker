@@ -1,4 +1,3 @@
-
 export type Page = 'Home' | 'Teams' | 'Players' | 'Data Entry' | 'Matches' | 'Match Stats' | 'Overall Stats' | 'Championships';
 
 export interface Championship {
@@ -23,6 +22,7 @@ export interface Player {
   name: string;
   number: string;
   teamId: string;
+  pictureUrl?: string;
 }
 
 export interface Match {
@@ -35,10 +35,24 @@ export interface Match {
   team2Name: string;
   team1Score: number;
   team2Score: number;
+  team1_q1?: number;
+  team1_q2?: number;
+  team1_q3?: number;
+  team1_q4?: number;
+  team1_e1?: number;
+  team1_e2?: number;
+  team1_e3?: number;
+  team2_q1?: number;
+  team2_q2?: number;
+  team2_q3?: number;
+  team2_q4?: number;
+  team2_e1?: number;
+  team2_e2?: number;
+  team2_e3?: number;
 }
 
 export interface PlayerStats {
-  id: string;
+  id:string;
   matchId: string;
   playerId: string;
   teamId: string;

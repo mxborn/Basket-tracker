@@ -46,17 +46,27 @@ const HomePage: React.FC = () => {
         if (mainTeamStats.length === 0) return null;
 
         const pointsPerPlayer = mainTeamStats.reduce((acc, stat) => {
+            const player = players.find(p => p.id === stat.playerId);
+            if (!player) return acc;
+
             if (!acc[stat.playerId]) {
-                acc[stat.playerId] = { name: stat.playerName, number: stat.playerNumber, points: 0 };
+                acc[stat.playerId] = { name: player.name, number: player.number, points: 0 };
             }
             acc[stat.playerId].points += stat.pts;
             return acc;
         }, {} as { [playerId: string]: { name: string, number: string, points: number } });
+        
+        const playerPointsArray = Object.values(pointsPerPlayer);
+        if (playerPointsArray.length === 0) {
+            return null;
+        }
 
-        const top = Object.values(pointsPerPlayer).reduce((max, p) => p.points > max.points ? p : max, { name: '', number: '', points: -1 });
-
-        return top.points > -1 ? { playerName: top.name, playerNumber: top.number, pts: top.points } : null;
-    }, [filteredStats, mainTeam]);
+        // FIX: The original `reduce` call lacked an initial value, causing TypeScript to infer `unknown` type for its parameters, leading to compile errors.
+        // Using the first element as the initial accumulator for reduce is a safe and robust pattern when the array is guaranteed to be non-empty.
+        const top = playerPointsArray.reduce((max, p) => p.points > max.points ? p : max, playerPointsArray[0]);
+        
+        return { playerName: top.name, playerNumber: top.number, pts: top.points };
+    }, [filteredStats, mainTeam, players]);
 
     const chartData = useMemo(() => {
         if (!mainTeam) return [];
@@ -89,6 +99,20 @@ const HomePage: React.FC = () => {
     return (
         <div>
             <h1 className="text-4xl font-bold text-text-primary mb-8">Dashboard</h1>
+            
+            {mainTeam && (
+                <Card className="mb-8 flex items-center gap-4">
+                    <img 
+                        src={mainTeam.logoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(mainTeam.name)}&background=ED8936&color=fff`} 
+                        alt={`${mainTeam.name} logo`} 
+                        className="w-16 h-16 rounded-full object-cover bg-gray-500"
+                    />
+                    <div>
+                        <h2 className="text-2xl font-semibold text-text-primary">{mainTeam.name}</h2>
+                        <p className="text-text-secondary">Main Team</p>
+                    </div>
+                </Card>
+            )}
 
             <div className="mb-6">
                 <label htmlFor="championship-filter" className="block text-sm font-medium text-text-secondary mb-2">Filter by Championship</label>

@@ -2,8 +2,8 @@
 import React from 'react';
 
 interface TableProps {
-  headers: string[];
-  rows: (string | number)[][];
+  headers: React.ReactNode[];
+  rows: React.ReactNode[][];
   className?: string;
 }
 
