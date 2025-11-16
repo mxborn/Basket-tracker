@@ -100,3 +100,12 @@ export interface MatchData {
   teams: Team[];
   players: Player[];
 }
+
+export interface AppState {
+  teams: Team[];
+  players: Player[];
+  matches: Match[];
+  stats: PlayerStats[];
+  championships: Championship[];
+  championshipTeams: ChampionshipTeam[];
+}

@@ -2,29 +2,29 @@ import React, { useState, useEffect } from 'react';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 
+type PersistenceMode = 'none' | 'local' | 'server';
+
 const SettingsPage: React.FC = () => {
-    const [isPersistenceEnabled, setIsPersistenceEnabled] = useState<boolean>(false);
+    const [persistenceMode, setPersistenceMode] = useState<PersistenceMode>('none');
 
     useEffect(() => {
-        const enabled = localStorage.getItem('basketstat_persistence_enabled') === 'true';
-        setIsPersistenceEnabled(enabled);
+        const mode = (localStorage.getItem('basketstat_persistence_mode') as PersistenceMode) || 'none';
+        setPersistenceMode(mode);
     }, []);
 
-    const handleTogglePersistence = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const enabled = e.target.checked;
-        setIsPersistenceEnabled(enabled);
-        localStorage.setItem('basketstat_persistence_enabled', String(enabled));
+    const handleModeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newMode = e.target.value as PersistenceMode;
+        setPersistenceMode(newMode);
+        localStorage.setItem('basketstat_persistence_mode', newMode);
         
-        if (enabled) {
-            alert('Data will now be saved locally in your browser. Please reload the page to load any previously saved data.');
-        } else {
-            if (window.confirm('Disabling this will stop saving data. Do you also want to clear all currently saved data from your browser? This action cannot be undone.')) {
+        if (newMode === 'none' && localStorage.getItem('basketstat_app_state')) {
+            if (window.confirm('You are switching to no persistence. Do you want to clear all data previously saved in your local browser? This action cannot be undone.')) {
                 localStorage.removeItem('basketstat_app_state');
-                alert('Local data has been cleared. The app will now use temporary memory. Reloading the page to apply changes.');
+                alert('Local data cleared. Reloading the page.');
                 window.location.reload();
-            } else {
-                 alert('Data will no longer be saved, but existing data will remain in your browser if you re-enable persistence later.');
             }
+        } else {
+            alert(`Persistence mode set to "${newMode}". Please reload the page for the changes to take full effect.`);
         }
     };
 
@@ -39,7 +39,7 @@ const SettingsPage: React.FC = () => {
         
         const csvContent = [headers, team1Player1, team1Player2, team1Totals, team2Player1, team2Player2, team2Totals].join("\n");
         
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-s8;' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.setAttribute("href", url);
@@ -49,6 +49,12 @@ const SettingsPage: React.FC = () => {
         document.body.removeChild(link);
     };
 
+    const options = [
+        { id: 'none', title: 'No Persistence', description: 'Data is stored in memory and is lost when you close the browser tab. (Default)' },
+        { id: 'local', title: 'Local Database', description: 'Data is saved in your browser. It persists after closing the tab, but is only available on this computer.' },
+        { id: 'server', title: 'Server Database', description: 'Simulates saving to a server. Data is available across different computers and browsers.' }
+    ];
+
     return (
         <div>
             <h1 className="text-4xl font-bold text-text-primary mb-8">Settings</h1>
@@ -56,26 +62,26 @@ const SettingsPage: React.FC = () => {
             <div className="space-y-6">
                 <Card>
                     <h2 className="text-2xl font-semibold text-accent mb-4">Data Storage</h2>
-                    <p className="text-text-secondary mb-4">
-                        Enable this option to save all your teams, players, and match data in your browser's local storage.
-                        This allows your data to persist even after you close the browser tab.
+                    <p className="text-text-secondary mb-6">
+                        Choose how you want your application data to be stored. Changes may require a page reload to take effect.
                     </p>
-                    <div className="flex items-center">
-                        <label className="flex items-center cursor-pointer">
-                            <div className="relative">
-                                <input 
-                                    type="checkbox" 
-                                    className="sr-only" 
-                                    checked={isPersistenceEnabled}
-                                    onChange={handleTogglePersistence}
-                                />
-                                <div className={`block w-14 h-8 rounded-full ${isPersistenceEnabled ? 'bg-accent' : 'bg-gray-600'}`}></div>
-                                <div className={`dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition-transform ${isPersistenceEnabled ? 'transform translate-x-6' : ''}`}></div>
-                            </div>
-                            <div className="ml-3 text-text-primary font-medium">
-                                {isPersistenceEnabled ? 'Local Storage Enabled' : 'Local Storage Disabled'}
-                            </div>
-                        </label>
+                    <div className="space-y-4">
+                       {options.map(option => (
+                           <label key={option.id} className="flex items-center p-4 rounded-lg bg-primary border-2 border-transparent has-[:checked]:border-accent cursor-pointer transition-all">
+                               <input 
+                                   type="radio"
+                                   name="persistence-mode"
+                                   value={option.id}
+                                   checked={persistenceMode === option.id}
+                                   onChange={handleModeChange}
+                                   className="h-5 w-5 text-accent bg-secondary border-gray-500 focus:ring-accent"
+                               />
+                               <div className="ml-4">
+                                   <p className="font-semibold text-text-primary">{option.title}</p>
+                                   <p className="text-sm text-text-secondary">{option.description}</p>
+                               </div>
+                           </label>
+                       ))}
                     </div>
                 </Card>
 

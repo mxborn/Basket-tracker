@@ -1,14 +1,7 @@
-import React, { createContext, useContext, useReducer, ReactNode } from 'react';
-import type { Team, Player, Match, PlayerStats, MatchData, Championship, ChampionshipTeam } from '../types';
+import React, { createContext, useContext, useReducer, ReactNode, useEffect, useState } from 'react';
+import type { Team, Player, Match, PlayerStats, MatchData, Championship, ChampionshipTeam, AppState } from '../types';
+import { api } from '../services/api';
 
-interface AppState {
-  teams: Team[];
-  players: Player[];
-  matches: Match[];
-  stats: PlayerStats[];
-  championships: Championship[];
-  championshipTeams: ChampionshipTeam[];
-}
 
 type Action =
   | { type: 'ADD_MATCH_DATA'; payload: { matchData: MatchData; championshipId: string } }
@@ -22,11 +15,13 @@ type Action =
   | { type: 'UPDATE_CHAMPIONSHIP'; payload: Championship }
   | { type: 'DELETE_CHAMPIONSHIP'; payload: string }
   | { type: 'ADD_TEAM_TO_CHAMPIONSHIP'; payload: ChampionshipTeam }
-  | { type: 'REMOVE_TEAM_FROM_CHAMPIONSHIP'; payload: ChampionshipTeam };
+  | { type: 'REMOVE_TEAM_FROM_CHAMPIONSHIP'; payload: ChampionshipTeam }
+  | { type: 'SET_STATE'; payload: AppState };
 
 interface AppContextType {
   state: AppState;
   dispatch: React.Dispatch<Action>;
+  isLoading: boolean;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -42,6 +37,8 @@ const initialState: AppState = {
 
 const appReducer = (state: AppState, action: Action): AppState => {
   switch (action.type) {
+    case 'SET_STATE':
+        return action.payload;
     case 'ADD_MATCH_DATA': {
       const { matchData, championshipId } = action.payload;
       const { match: rawMatch, stats: rawStats, teams: newTeamsFromPayload, players: newPlayersFromPayload } = matchData;
@@ -232,7 +229,8 @@ const appReducer = (state: AppState, action: Action): AppState => {
 };
 
 const getInitialState = (): AppState => {
-  if (typeof window !== 'undefined' && localStorage.getItem('basketstat_persistence_enabled') === 'true') {
+  const mode = typeof window !== 'undefined' ? localStorage.getItem('basketstat_persistence_mode') : 'none';
+  if (mode === 'local') {
     const savedState = localStorage.getItem('basketstat_app_state');
     if (savedState) {
       try {
@@ -249,16 +247,40 @@ const getInitialState = (): AppState => {
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(appReducer, getInitialState());
+  const [isLoading, setIsLoading] = useState(true);
 
-  React.useEffect(() => {
-    if (typeof window !== 'undefined' && localStorage.getItem('basketstat_persistence_enabled') === 'true') {
+  useEffect(() => {
+    const loadFromServer = async () => {
+      const mode = localStorage.getItem('basketstat_persistence_mode');
+      if (mode === 'server') {
+        try {
+          const serverState = await api.getAppState();
+          if (serverState) {
+            dispatch({ type: 'SET_STATE', payload: serverState });
+          }
+        } catch (error) {
+          console.error("Failed to load state from server:", error);
+        }
+      }
+      setIsLoading(false);
+    };
+    loadFromServer();
+  }, []);
+
+  useEffect(() => {
+    if (isLoading) return; // Don't save while initially loading
+
+    const mode = localStorage.getItem('basketstat_persistence_mode');
+    if (mode === 'local') {
       localStorage.setItem('basketstat_app_state', JSON.stringify(state));
+    } else if (mode === 'server') {
+      api.saveAppState(state);
     }
-  }, [state]);
+  }, [state, isLoading]);
 
 
   return (
-    <AppContext.Provider value={{ state, dispatch }}>
+    <AppContext.Provider value={{ state, dispatch, isLoading }}>
       {children}
     </AppContext.Provider>
   );

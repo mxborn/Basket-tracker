@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Layout from './components/Layout';
 import HomePage from './pages/HomePage';
@@ -11,9 +10,11 @@ import OverallStatsPage from './pages/OverallStatsPage';
 import ChampionshipsPage from './pages/ChampionshipsPage';
 import SettingsPage from './pages/SettingsPage';
 import type { Page } from './types';
+import { useAppContext } from './context/AppContext';
 
-const App: React.FC = () => {
+const AppContent: React.FC = () => {
   const [activePage, setActivePage] = useState<Page>('Home');
+  const { isLoading } = useAppContext();
 
   const renderPage = () => {
     switch (activePage) {
@@ -40,6 +41,14 @@ const App: React.FC = () => {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-screen bg-primary">
+        <div className="text-accent text-2xl animate-pulse">Loading Data...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-primary">
       <Layout activePage={activePage} setActivePage={setActivePage}>
@@ -47,6 +56,11 @@ const App: React.FC = () => {
       </Layout>
     </div>
   );
+};
+
+
+const App: React.FC = () => {
+  return <AppContent />;
 };
 
 export default App;
