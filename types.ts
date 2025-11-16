@@ -1,4 +1,4 @@
-export type Page = 'Home' | 'Teams' | 'Players' | 'Data Entry' | 'Matches' | 'Match Stats' | 'Overall Stats' | 'Championships';
+export type Page = 'Home' | 'Teams' | 'Players' | 'Data Entry' | 'Matches' | 'Match Stats' | 'Overall Stats' | 'Championships' | 'Settings';
 
 export interface Championship {
   id: string;

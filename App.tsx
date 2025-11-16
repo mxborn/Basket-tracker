@@ -9,6 +9,7 @@ import MatchListPage from './pages/MatchListPage';
 import MatchStatsPage from './pages/MatchStatsPage';
 import OverallStatsPage from './pages/OverallStatsPage';
 import ChampionshipsPage from './pages/ChampionshipsPage';
+import SettingsPage from './pages/SettingsPage';
 import type { Page } from './types';
 
 const App: React.FC = () => {
@@ -32,6 +33,8 @@ const App: React.FC = () => {
         return <OverallStatsPage />;
       case 'Championships':
         return <ChampionshipsPage />;
+      case 'Settings':
+        return <SettingsPage />;
       default:
         return <HomePage />;
     }

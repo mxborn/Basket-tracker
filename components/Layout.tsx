@@ -1,7 +1,7 @@
 
 import React from 'react';
 import type { Page } from '../types';
-import { HomeIcon, TeamIcon, PlayerIcon, UploadIcon, DocumentIcon, ChartIcon, StatsIcon, ChampionshipIcon } from './icons';
+import { HomeIcon, TeamIcon, PlayerIcon, UploadIcon, DocumentIcon, ChartIcon, StatsIcon, ChampionshipIcon, SettingsIcon } from './icons';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -18,6 +18,7 @@ const navItems: { name: Page; icon: React.ReactNode }[] = [
   { name: 'Championships', icon: <ChampionshipIcon /> },
   { name: 'Teams', icon: <TeamIcon /> },
   { name: 'Players', icon: <PlayerIcon /> },
+  { name: 'Settings', icon: <SettingsIcon /> },
 ];
 
 const Layout: React.FC<LayoutProps> = ({ children, activePage, setActivePage }) => {

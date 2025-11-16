@@ -231,8 +231,31 @@ const appReducer = (state: AppState, action: Action): AppState => {
   }
 };
 
+const getInitialState = (): AppState => {
+  if (typeof window !== 'undefined' && localStorage.getItem('basketstat_persistence_enabled') === 'true') {
+    const savedState = localStorage.getItem('basketstat_app_state');
+    if (savedState) {
+      try {
+        return JSON.parse(savedState);
+      } catch (e) {
+        console.error("Failed to parse state from localStorage:", e);
+        return initialState;
+      }
+    }
+  }
+  return initialState;
+};
+
+
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [state, dispatch] = useReducer(appReducer, initialState);
+  const [state, dispatch] = useReducer(appReducer, getInitialState());
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined' && localStorage.getItem('basketstat_persistence_enabled') === 'true') {
+      localStorage.setItem('basketstat_app_state', JSON.stringify(state));
+    }
+  }, [state]);
+
 
   return (
     <AppContext.Provider value={{ state, dispatch }}>

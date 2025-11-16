@@ -24,10 +24,22 @@ const VpsCell: React.FC<{ value: number }> = ({ value }) => {
 const PlusMinusCell: React.FC<{ value: number }> = ({ value }) => {
     const maxVal = 35; // A reasonable max for scaling the bar
     const width = Math.min((Math.abs(value) / maxVal) * 100, 100);
+    
+    let bgColor = '';
+    if (value > 3) {
+        bgColor = 'bg-green-500/70';    // Green
+    } else if (value >= 0) { // Covers 0 to 3
+        bgColor = 'bg-green-400/70';    // Light Green
+    } else if (value >= -3) { // Covers -3 to 0
+        bgColor = 'bg-orange-500/70';   // Orange
+    } else { // Covers < -3
+        bgColor = 'bg-red-600/70';      // Red
+    }
+
     return (
         <div className="relative w-16 h-5 mx-auto bg-gray-600 rounded-sm overflow-hidden flex items-center justify-center">
             <div
-                className="absolute top-0 left-0 h-full bg-blue-400/70"
+                className={`absolute top-0 left-0 h-full ${bgColor}`}
                 style={{ width: `${width}%` }}
             ></div>
             <span className="relative z-10 font-semibold text-white text-xs">{value}</span>
